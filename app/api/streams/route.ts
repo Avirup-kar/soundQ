@@ -12,63 +12,82 @@ const CreateStreamSchema = z.object({
 })
 
 export async function POST(req: NextRequest) {
-    try {   
-        const data = CreateStreamSchema.parse(await req.json());
-        const isYt = data.url.match(ytRegex);
+  try {
+    const data = CreateStreamSchema.parse(await req.json());
+    const isYt = data.url.match(ytRegex);
 
-        if(!isYt) {
-            return NextResponse.json({
-            message: "Wrong url format"
-        },{
-            status: 411
-        })
-        }
-
-
-        const MAX_QUEQE_LEN = 20;
-         const streams = await prismaClient.stream.count({
-            where: {
-                userId: data.creatorId
-            }
-         })
-
-         if(streams > MAX_QUEQE_LEN){
-               return NextResponse.json({
-               message: "You can't add song more then 20",
-               })
-         }
-
-        const extractedId = data.url.split("?v=")[1];
-
-        const videores = await youtubesearchapi.GetVideoDetails(extractedId)
-        const getThumbnail = videores.thumbnail.thumbnails;
-        getThumbnail.sort((a: {width: number}, b: {width: number}) => a.width < b.width ? -1 : 1);
-
-       const stream = await prismaClient.stream.create({
-            data: {
-                userId: data.creatorId,
-                url: data.url,
-                extractedId,
-                type: "Youtube",
-                title: videores.title ?? "Can't find",
-                smallImg: getThumbnail.length > 1 ? getThumbnail[getThumbnail.length - 2].url: getThumbnail[getThumbnail.length - 1].url ?? "https://cdn.pixabay.com/photo/2020/10/05/10/51/cat-5628953_1280.jpg",
-                bigImg: getThumbnail[getThumbnail.length - 1].url ?? "https://cdn.pixabay.com/photo/2020/10/05/10/51/cat-5628953_1280.jpg"
-            }
-        })
-
-        return NextResponse.json({
-          ...stream,
-          hasUpvoted: false,
-          upvotes:0
-        })
-    } catch (e) {
-          return NextResponse.json({
-        message: "Error while adding a stream",
-        error: e instanceof Error ? e.message : String(e)
-    },{
-        status: 411
-    })
+    if (!isYt) {
+      return NextResponse.json(
+        { message: "Wrong URL format" },
+        { status: 400 }
+      );
     }
+
+    const MAX_QUEUE_LEN = 20;
+    const streams = await prismaClient.stream.count({
+      where: { userId: data.creatorId },
+    });
+
+    if (streams >= MAX_QUEUE_LEN) {
+      return NextResponse.json({
+        message: "You can't add more than 20 songs",
+      }, { status: 400 });
+    }
+
+    const extractedId = data.url.split("?v=")[1];
+    if (!extractedId) {
+      return NextResponse.json({ message: "Invalid YouTube URL" }, { status: 400 });
+    }
+
+    // Fetch video details safely
+    let videores;
+    try {
+      videores = await youtubesearchapi.GetVideoDetails(extractedId);
+    } catch (err) {
+      console.error("YouTube API failed:", err);
+      return NextResponse.json({
+        message: "Failed to fetch YouTube video details",
+        error: err instanceof Error ? err.message : String(err),
+      }, { status: 500 });
+    }
+
+    // Safe thumbnail handling with fallback
+    const getThumbnail = videores?.thumbnail?.thumbnails ?? [
+      { url: "https://cdn.pixabay.com/photo/2020/10/05/10/51/cat-5628953_1280.jpg", width: 1280 },
+    ];
+    getThumbnail.sort((a: {width: number}, b: {width: number}) => (a.width < b.width ? -1 : 1));
+
+    const smallImg =
+      getThumbnail.length > 1
+        ? getThumbnail[getThumbnail.length - 2].url
+        : getThumbnail[getThumbnail.length - 1].url;
+
+    const bigImg = getThumbnail[getThumbnail.length - 1].url;
+
+    const stream = await prismaClient.stream.create({
+      data: {
+        userId: data.creatorId,
+        url: data.url,
+        extractedId,
+        type: "Youtube",
+        title: videores.title ?? "Can't find",
+        smallImg,
+        bigImg,
+      },
+    });
+
+    return NextResponse.json({
+      ...stream,
+      hasUpvoted: false,
+      upvotes: 0,
+    });
+  } catch (e) {
+    console.error("STREAM POST ERROR:", e);
+    return NextResponse.json({
+      message: "Error while adding a stream",
+      error: e instanceof Error ? e.message : String(e),
+    }, { status: 500 });
+  }
 }
 
 
