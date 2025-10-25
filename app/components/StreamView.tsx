@@ -23,7 +23,7 @@ interface QueueItem {
 }
 
 export default function StreamView({creatorId, PlayVideo = false}: {creatorId: string, PlayVideo: boolean}) {
-  const session = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const REFRESH_INTERVAL_MS = 10 * 1000;
   const [queue, setQueue] = useState<QueueItem[]>([]);
@@ -35,7 +35,7 @@ export default function StreamView({creatorId, PlayVideo = false}: {creatorId: s
 
 
   const SignOut = async () => {
-  if (session?.data?.user) {
+  if (session?.user) {
     await signOut({ redirect: false });
     router.push("/");
   }
@@ -78,6 +78,12 @@ export default function StreamView({creatorId, PlayVideo = false}: {creatorId: s
       console.error("Failed to fetch streams:", err);
     }
   }
+
+    useEffect(() => {
+    if (status === "unauthenticated") {
+      signIn();
+    }
+  }, [status]);
 
   useEffect(() => {
     refreshStreams();
@@ -217,7 +223,7 @@ const handleShare = () => {
         Share
       </button>
 
-      {session.data?.user ? <button  className="bg-primary py-1.5 rounded-lg cursor-pointer px-5 hover:bg-primary/80  hover:shadow-purple-500/50" onClick={() => SignOut()}>SignOut</button> : <button  className="bg-primary py-1.5 rounded-lg cursor-pointer px-5 hover:bg-primary/90" onClick={() => signIn()}>Signin</button>}
+      {session?.user ? <button  className="bg-primary py-1.5 rounded-lg cursor-pointer px-5 hover:bg-primary/80  hover:shadow-purple-500/50" onClick={() => SignOut()}>SignOut</button> : <button  className="bg-primary py-1.5 rounded-lg cursor-pointer px-5 hover:bg-primary/90" onClick={() => signIn()}>Signin</button>}
       </div>
     </div>
   </header>
