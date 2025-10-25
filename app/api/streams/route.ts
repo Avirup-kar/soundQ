@@ -51,18 +51,9 @@ export async function POST(req: NextRequest) {
       }, { status: 500 });
     }
 
-    // Safe thumbnail handling with fallback
-    const getThumbnail = videores?.thumbnail?.thumbnails ?? [
-      { url: "https://cdn.pixabay.com/photo/2020/10/05/10/51/cat-5628953_1280.jpg", width: 1280 },
-    ];
-    getThumbnail.sort((a: {width: number}, b: {width: number}) => (a.width < b.width ? -1 : 1));
+    const smallImg = `https://img.youtube.com/vi/${extractedId}/mqdefault.jpg`
 
-    const smallImg =
-      getThumbnail.length > 1
-        ? getThumbnail[getThumbnail.length - 2].url
-        : getThumbnail[getThumbnail.length - 1].url;
-
-    const bigImg = getThumbnail[getThumbnail.length - 1].url;
+    const BigImg = `https://img.youtube.com/vi/${extractedId}/hqdefault.jpg`
 
     const stream = await prismaClient.stream.create({
       data: {
@@ -71,8 +62,8 @@ export async function POST(req: NextRequest) {
         extractedId,
         type: "Youtube",
         title: videores.title ?? "Can't find",
-        smallImg,
-        bigImg,
+        smallImg: smallImg ?? "https://img.youtube.com/vi/BtT5Yc4_zzw/default.jpg",
+        bigImg: BigImg  ?? "https://img.youtube.com/vi/BtT5Yc4_zzw/default.jpg",
       },
     });
 
