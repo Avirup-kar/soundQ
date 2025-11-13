@@ -12,7 +12,8 @@ const Navbar = () => {
           <img src="logo.png" alt="logo" className="w-13.5 h-12" />
           <span className="text-xl font-bold text-foreground">SoundQ</span>
         </div>
-         {session.data?.user ? <button  className="bg-primary py-1.5 rounded-xl cursor-pointer px-5 hover:bg-primary/90" onClick={() => signOut()}>SignOut</button> : <button  className="bg-primary py-1.5 rounded-xl cursor-pointer px-5 hover:bg-primary/90" onClick={() => signIn()}>Signin</button>}
+         {/* /* {session.data?.user ? <button  className="bg-primary py-1.5 rounded-xl cursor-pointer px-5 hover:bg-primary/90" onClick={() => signOut()}>SignOut</button> : <button  className="bg-primary py-1.5 rounded-xl cursor-pointer px-5 hover:bg-primary/90" onClick={() => signIn()}>Signin</button>} */ */}
+        <button className="bg-primary py-1.5 rounded-xl cursor-pointer px-5 hover:bg-primary/90" onClick={() => session.data?.user ? signOut() : signIn()}>{session.data?.user ? "SignOut" : "SignIn"}</button>
       </nav>
     </header>
   )
