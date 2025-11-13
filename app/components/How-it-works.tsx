@@ -4,7 +4,7 @@ const steps = [
   {
     number: "01",
     title: "Create Stream",
-    description: "Set up your profile and create a stream with your playlist.",
+    description: "Set up your profile and create a stream with the existing playlist.",
     color: "text-indigo-500",
   },
   {
